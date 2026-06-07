@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRE Word App - 管理后台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --primary: #4f46e5;
+    --primary-light: #818cf8;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --radius: 12px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+
+  /* Login Screen */
+  .login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .login-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 48px 40px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+  .login-card h1 { font-size: 24px; margin-bottom: 8px; }
+  .login-card p { color: var(--text-secondary); margin-bottom: 32px; font-size: 14px; }
+  .login-card input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 16px;
+    margin-bottom: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .login-card input:focus { border-color: var(--primary); }
+  .login-card button {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .login-card button:hover { background: var(--primary-light); }
+  .error-msg { color: var(--danger); font-size: 13px; margin-top: 8px; min-height: 20px; }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .header h1 { font-size: 24px; }
+  .header button {
+    padding: 8px 16px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  /* Stats Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    text-align: center;
+  }
+  .stat-card .icon { font-size: 32px; margin-bottom: 8px; }
+  .stat-card .value { font-size: 32px; font-weight: 700; color: var(--primary); }
+  .stat-card .label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* Section */
+  .section {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    margin-bottom: 24px;
+  }
+  .section h2 { font-size: 18px; margin-bottom: 16px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border);
+    font-weight: 600;
+  }
+  td {
+    padding: 12px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-blue { background: #dbeafe; color: #1d4ed; }
+  .badge-green { background: #dcfce7; color: #166534; }
+
+  /* Refresh button */
+  .refresh-btn {
+    padding: 10px 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    float: right;
+    margin-bottom: 16px;
+  }
+  .refresh-btn:hover { background: var(--primary-light); }
+
+  .api-url {
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    word-break: break-all;
+    margin-bottom: 16px;
+  }
+  .api-url code { color: var(--primary); font-weight: 600; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <h1>🔐 管理后台</h1>
+    <p>GRE Word App 数据管理</p>
+    <input type="password" id="adminPassword" placeholder="请输入管理密码" autofocus>
+    <button onclick="doLogin()">登 录</button>
+    <div class="error-msg" id="loginError"></div>
+  </div>
+</div>
+
+<!-- Main Dashboard -->
+<div id="dashboard" class="container hidden">
+  <div class="header">
+    <h1>📊 管理后台</h1>
+    <button onclick="doLogout()">退出登录</button>
+  </div>
+
+  <div class="api-url">
+    🔗 后端地址：<code id="apiUrl"></code>
+    <br><br>
+    ⚙️ 如需修改后端地址，请编辑本文件第 <code>295</code> 行
+  </div>
+
+  <button class="refresh-btn" onclick="loadStats()">🔄 刷新数据</button>
+  <div style="clear:both"></div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="icon">👥</div>
+      <div class="value" id="statUsers">--</div>
+      <div class="label">注册用户</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">📝</div>
+      <div class="value" id="statSyncs">--</div>
+      <div class="label">总同步次数</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">💾</div>
+      <div class="value" id="statDisk">--</div>
+      <div class="label">数据占用空间</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">⏱️</div>
+      <div class="value" id="statUptime">--</div>
+      <div class="label">服务运行时间</div>
+    </div>
+  </div>
+
+  <!-- Recent Users -->
+  <div class="section">
+    <h2>📋 最近注册用户</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>邮箱</th>
+          <th>注册时间</th>
+        </tr>
+      </thead>
+      <tbody id="recentUsersBody">
+        <tr><td colspan="2" style="text-align:center;color:#94a3b8">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- All Users -->
+  <div class="section">
+    <h2>👥 所有用户</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>邮箱</th>
+          <th>注册时间</th>
+          <th>已学单词</th>
+          <th>学习天数</th>
+        </tr>
+      </thead>
+      <tbody id="allUsersBody">
+        <tr><td colspan="5" style="text-align:center;color:#94a3b8">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ========== 配置 ==========
+const API_BASE = 'https://study-brms.onrender.com'; // ← 改成你的后端地址
+// =============================
+
+let adminPwd = '';
+
+// Login
+async function doLogin() {
+  const pwd = document.getElementById('adminPassword').value;
+  if (!pwd) {
+    document.getElementById('loginError').textContent = '请输入密码';
+    return;
+  }
+
+  // Test login by calling stats API
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/stats`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd })
+    });
+    const data = await res.json();
+    if (data.success) {
+      adminPwd = pwd;
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('apiUrl').textContent = API_BASE;
+      loadStats();
+    } else {
+      document.getElementById('loginError').textContent = '密码错误';
+    }
+  } catch (err) {
+    document.getElementById('loginError').textContent = '无法连接后端：' + err.message;
+  }
+}
+
+function doLogout() {
+  adminPwd = '';
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('adminPassword').value = '';
+}
+
+// Load stats
+async function loadStats() {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/stats`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: adminPwd })
+    });
+    const data = await res.json();
+    if (!data.success) { alert('获取统计失败：' + data.error); return; }
+
+    const s = data.stats;
+
+    // Update stat cards
+    document.getElementById('statUsers').textContent = s.totalUsers;
+    document.getElementById('statSyncs').textContent = s.totalSyncs;
+    document.getElementById('statDisk').textContent = s.diskUsageMB + ' MB';
+
+    const uptimeMin = Math.floor(s.serverUptime / 60);
+    const uptimeHr = Math.floor(uptimeMin / 60);
+    if (uptimeHr > 0) {
+      document.getElementById('statUptime').textContent = uptimeHr + ' 小时';
+    } else {
+      document.getElementById('statUptime').textContent = uptimeMin + ' 分钟';
+    }
+
+    // Recent users
+    const recentBody = document.getElementById('recentUsersBody');
+    if (s.recentUsers && s.recentUsers.length > 0) {
+      recentBody.innerHTML = s.recentUsers.map(u => `
+        <tr>
+          <td>${u.email}</td>
+          <td>${new Date(u.created_at).toLocaleString('zh-CN')}</td>
+        </tr>
+      `).join('');
+    } else {
+      recentBody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#94a3b8">暂无用户</td></tr>';
+    }
+
+  } catch (err) {
+    alert('刷新失败：' + err.message);
+  }
+
+  // Load all users
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: adminPwd })
+    });
+    const data = await res.json();
+    if (!data.success) return;
+
+    const body = document.getElementById('allUsersBody');
+    if (data.users.length === 0) {
+      body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8">暂无用户</td></tr>';
+    } else {
+      body.innerHTML = data.users.map(u => `
+        <tr>
+          <td><span class="badge badge-blue">#${u.id}</span></td>
+          <td>${u.email}</td>
+          <td>${new Date(u.created_at).toLocaleString('zh-CN')}</td>
+          <td><span class="badge badge-green">${u.wordCount}</span></td>
+          <td>${u.logCount}</td>
+        </tr>
+      `).join('');
+    }
+  } catch (err) {
+    console.error('Load users error:', err);
+  }
+}
+
+// Enter key to login
+document.getElementById('adminPassword').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+
+</body>
+</html>
